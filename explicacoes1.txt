@@ -1,0 +1,273 @@
+LARAVEL-
+para iniciar projeto:
+vou no terminal cmd, digito:
+
+composer create-project --prefer-dist laravel/laravel blog
+
+laravel/laravel -> DISTRIBUIDOR/PACOTE; o distribuidor pode ter n pacotes, 'blog' é o nome da aplicação que iremos usar laravel.
+dentro do diretorio que foi criado, no caso, 'blog', temos um diretorio chamado 'public'. este diretorio é o qual será servido para servidor http.
+
+pra ver se ta funcionando, vá até o public no terminal, e digite:
+php -S localhost:PORTA -> a porta pode ser qq porta q esteja livre, ex: php -S localhost:8000
+
+http://localhost:8000 -> este será o endereço no qual a aplicação será servida. se chegar na pagina do laravel, a aplicação foi iniciada com sucesso. pra interromper, dá CTRL C.
+
+
+///////////////////
+
+Rotas, Controllers e Views:
+
+Artisan Controle -
+Artesão do laravel. smp qd iniciamos novo projeto, o artisan é incluido no projeto. vai no diretorio q foi construido ao iniciar projeto, no caso, 'blog', e verás lá: "artisan". para acessá-lo, no terminal, digite, no diretorio onde iniciou o projeto laravel: 
+php artisan list.
+agora, para iniciar a aplicação basta usar:
+
+php artisan serve
+
+/\ bem melhor que uisar php -S ....
+
+pra definir a porta:
+php artisan serve --port=9000
+
+// mas se tentar acessar a aplicaçao no browser com 127.0.0.1:9000 -> verá q tará service unaivable
+// basta dar:
+php artisan up
+
+// e agora servir a aplicaçao novamente:
+php artisan serve --port=9000
+
+//////////////
+
+Rotas ( routes ) do Laravel - Introdução
+O que são rotas?
+Rotas representam caminhos existentes dentro da aplicação. ao acessar um recurso da aplicaçao atraves de uma url, estamos na pratica acessando uma rota.
+3 rotas distintas:
+www.minhaaplicacao.com.br // pagina inicial da aplicaçao 
+www.minhaaplicacao.com.br/sobrenos // pagina falando um pouco do projeto
+www.minhaaplicacao.com.br/contato // pagina de contato
+
+/\ // portanto, 3 paginas que deverao ser construidas de modo distinto
+
+Organizaçao das rotas no Laravel: 4 arquivos de rotas distintas:
+
+API
+Channels
+Console
+Web 
+(esses arquivos estão dentro da pasta routes)
+
+criei um novo projeto aqui chamado 'conhecimentos'. 
+adicionemos o projeto (diretorio Conhecimentos) no VSCode.
+
+vemos que temos a raiz do diretorio 'Routes' em 'Conhecimentos'. vemos o 'api.php, channels, console e web'.
+
+web.php serve pra registrar as rotas no velho estilo web. ou seja, processando paginas no lado back-end e servindo essas paginas em respostas e requisiçoes, permitindo inclusive a utilizaçao de recursos como cookies e sessões. 
+
+api.php serve pra registrar rotas de uma api, não suportando, portanto, os recursos de cookies e sessões, uma vez que APIs possuem o proposito de responder dados às requisitas feitas, isto é, recurso ideal, onde front-end é separado de back-end conversando atraves de uma aplicaçao API.
+
+channels.php serve para definição de rotas de comunicação broadcasting, este tipo de recurso serve como comunicação real, através do uso de  certas tecnologias. diferente do metodo tradicional de requisiçao e resposta, onde um cliente, ou seja, uma aplicaçao front end faz uma requisição para o servidor, e o servidor fornece uma resposta, este tipo de comunicação segue o canal oposto, ou seja, permite que a aplicação servidora notifique os clientes de atualizações ao lado do back-end, possibilitando ao front-end renderizar automaticamente essas mudanças que foram notificadas pelo servidor, dando a ideia de tempo real.
+
+console.php serve para criação de comandos personalizados que serão executados a partir do Artisan.
+
+//////////////
+
+Super Gestão - Implementando as rotas: principal, sobre-nos e contato
+no modelo tradicional de desenvolvimento, as views são renderizadas no lado do servidor. pra implementar nossas rotas, usemos o arquivo 'web.php' dentro do diretorio 'routes'. ao chegar na pasta, verá que já terá uma rota, q é a rota principal, em: Route::get('/',, function () { ... }); , '/' é a rota principal, qualquer acesso feito diretamente para nossa aplicação qd ela é servida, é direcionado para essa rota ( / ) desde que não indiquemos na URL nenhum caminho específico, nenhuma rota especifica.
+no web.php , verá tem q uma view, q é a view padrão da instação de novos projetos laravel, isto é, vem com o projeto para fins de testes:
+return view('welcome');
+
+colocamos return 'Olá'; e irá mostrar 'olá'
+
+agora, coloquemos novas rotas:
+Route::get('/', function () {
+    return 'Olá';
+});
+
+Route::get('/sobre-nos', function () {
+    return 'Sobre-nos';
+});
+
+
+Route::get('/contato', function () {
+    return 'Contato';
+});
+
+ao acessar http://127.0.0.1:8000/sobre-nos e http://127.0.0.1:8000/contato , que são as novas rotas, irá mostrar o texto q colocamos de retorno.
+
+O objeto 'Route' é quem vai cuidar de toda essa parte de roteamento da aplicação e definimos as rotas e os métodos verbos HHTP através do método 'get'.
+// VERBOS HTTP:
+get
+possibilitando
+put
+patch
+delete
+options
+
+são os principais verbos HTTP que podem ser utilizados para controlar nossas requisiçoes que são feitas para nosso servidor, para nossa aplicação
+
+então, em, por ex:
+
+Route::get('/contato', function () {
+    return 'Contato';
+});
+
+------>/\ estamos definindo o verbo HTTP 'get', passando pro objeto 'Route', através do método 'get' uma URI '/contato', ou seja, nossa rota, e o segundo parâmetro, uma função de callback, ou seja, uma ação que deve ser tomado quando a rota (/contato) for acessada pelo respectivo método (get).
+Route::get($uri, $callback)
+
+/////////////////
+Controladores:
+
+Os controllers servem para agrupar a lógica que deve ser feita em função da rota acessada por um determinado cliente. Ao fazermos uma requisição para o servidor, isto é, ao acessarmos uma rota da aplicação, essa rota por sua vez estará associado a um Controller e uma action, ou seja, a um controlador e a uma ação dentro desse controlador, contendo a lógica do que deve ser feito em função da rota q foi acessada.
+essa separação entre rotas e controladores permite separar melhor o código, definindo responsabilidades claras para cada parte do framework.
+embora as rotas implimentem funções de callback, e essas funçoes de callback possam ser usadas para definir toda logica com base na rota a ser acessada, o ideal é direcionarmos as requisiçoes para os controladores, para ai sim iniciarmos as tratativas com base nas requisições, mantendo portanto a separação clara entre rotas e separadores.
+separaçao importante pq em rotas temos orientaçao mais focadas para questoes tecnicas das aplicações em si, nos verbos HTTP utilizados, bem como nos middlewares que podem ser usadas nas requisiçoes e respostas
+já no Controller é mais necessaria para atender os requisitos do negocio, é bem nos action que vamos definir o que a funçao deve fazer pelo que foi requisitado através de uma Rota.
+
+/////////////
+
+Implementando os controladores: principal, sobre-nos e contato:
+Os controladores, na prática, são classes, para nomeá-los, usamos Camel Case
+
+no terminal, dentro da raiz do projeto, executemos:
+php artisan make:controller PrincipalController // PrincipalController é o nome do Controlador,, fazemos este comando para criar uma nova classe de controlador
+
+Os controllers ficam dentro da pasta do projeto, app > http > controllers > nomedocontrolador.php , este arquivo foi criado dentro da estrutura da framework com uma estrutura padrão.
+
+temos o namespace desta classe, inclusão da classe Request no contexto e a definição da classe com o nome extendendo a classe 'Controller'.
+basta criarmos o método dentro da classe.
+
+class PrincipalController extends Controller
+{
+    public function principal(){
+        echo 'Olá'; // colocamos aqui um echo no que estava sendo processado na própria rota. o nome do método pode ser qualquer, coloquei apenas "principal". no contexto de um controlador, os métodos são conhecidos como 'actions', então esse 'principal' é um action
+    }
+}
+
+// actions serão os métodos que estarão dentro dos controladores que serão associados às rotas, pq a rota não chamará apenas o controlador, mas sim um método desse controlador. a conexão é da rota para com o método. 
+// associemos a raiz da nossa aplicação ( / ) com a action principal da classe PrincipalController
+
+// agora, vamos em web.php, e colocamos uma Rota, e alteramos, em vez de passar função (caso coloquemos função ele entenderá como função Callback), agora vamos colocar o Controller, e ele entenderá que estamos indicando um controlador e uma ação que deve ser executada quando a rota '/' for chamada.
+Route::get('/', [\App\Http\Controllers\PrincipalController::class, 'principal']);
+
+// agora, faremos para o resto:
+php artisan make:controller SobreNosController
+php artisan make:controller ContatoController
+
+agora, vms nesses arquivos criados, e vamos abrir as functions
+class SobreNosController extends Controller
+{
+    public function sobreNos() {
+        echo 'Sobre-nós';
+    }
+}
+pro contato msm coisa.
+
+agora, dnv no web.php, para as rotas:
+Route::get('/sobre-nos', [\App\Http\Controllers\SobreNosController::class, 'sobreNos']);
+
+Route::get('/contato', [\App\Http\Controllers\ContatoController::class, 'contato']);
+
+agora estamos respeitando as responsabilidades das partes do nosso framework, de um lado as rotas que visam organizar as rotas da aplicação em si, e do outro lado os Controladores, q são as camadas do framework, que permitem organizar todas as lógicas de fato
+
+///////////////
+
+Views -
+As views são as visões que reproduzimos no lado do servidor e retornamos em sequencia para o cliente que fez a requisição => modelo tradicional das requisições web, que as views sao processadas no lado do servidor e enviadas de volta para quem fez a requisição.
+hoje, tem uma tecnica mais moderna, onde existe separaçao do back-end e do front-end em aplicações distintas, conectadas via API.
+
+Basicamente, as views conterão todo o HTML que serão processados no lado do back-end.
+
+As views ficarão em: resources/views. em 'views', podemos criar outros diretórios. criamos um diretorio chamado 'app' e outro 'site'.
+dentro de 'site', criamos um arquivo chamado: principal.blade.php
+'.blade.php' no final do nome do arquivo é um padrão do laravel, pq as views serão processados por um recurso chamado 'blade' do framework laravel. todas as views precisam finalizar com '.blade.php'.
+em 'principal.blade.php' é onde de fato iremos incluir toda codificação html. criamos o sobre-nos.blade.php e o contato.blade.php
+
+colocamos <h2>Sobre nos(view)</h2> em cada arquivo
+
+agora, precisamos ajustar as actions, que estão sendo associadas para as rotas, para que essas actions/métodos, trabalhem com as views.
+la em 'controllers', nos arquivos controladores, nas funções/metodos/actions, em vez de dar echo na info, vamos substituir a instruçao pela renderização da view.
+em vez de return echo 'Olá', coloquemos:
+return view('site.principal'); // ele ja subentende que ta dentro de views, apenas colocamos onde a view tá, dentro do diretorio 'site' que criamos e colocando '.principal' pra saber o arquivo tb. pode-se omitir blade.php, pois o framework ja entende q é uma view
+
+//////////////
+
+Enviando parâmetros -
+Como enviar parametros atraves das rotas;
+dentro do web.php, criemos uma nova rota:
+
+Route::get('/contato{nome}', function () {
+    echo 'Estamos Aqui';
+});
+
+/\ esta rota está esperando um parametro (nome), este parametro que está sendo esperado precisa ser encaminhado pra nossa função de callback:
+Route::get('/contato{nome}', function ($nome) {
+    echo 'Estamos Aqui';
+});
+
+/\ embora defini como $nome, com o mesmo nome do parametro, poderia ter nome xyz, isto é, $xyz, pq, na verdade, o que importa é a sequencia dos parametros. vamos tipar a variavel sendo string, um novo recurso do PHP:
+Route::get('/contato/{nome}', function (string $cyz) {
+    echo 'Estamos Aqui'.$xyz; // concatenamos
+});
+Ao acessar: http://127.0.0.1:8000/contato/Luiz
+Irá mostrar -> estamos aqui: Luiz
+
+// Outro jeito:
+Route::get('/contato/{nome}/{categoria}/{telefone}', function (string $xyz, string $z, string $y) {
+    echo 'Estamos Aqui: '.$xyz. ' Categoria: '.$z. ' Telefone: '.$y; // concatenamos
+});
+Ao acessar: hhttp://127.0.0.1:8000/contato/Luiz/SAI/21%20979007792
+Irá mostrar: Estamos Aqui: Luiz Categoria: SAI Telefone: 21 979007792 // %20 é o espaço
+
+// Lembrando que, o que importa é a sequencia dos parametros
+
+
+//////////////
+Parametros opcionais e valores padrões -
+Para indicar que é opcional, basta indicar o '?' que o Laravel entenderá q é opcional:
+Route::get('/contato/{nome}/{categoria}/{telefone?}', function (string $nome, string $categoria, string $telefone = 'Telefone não Informado') {
+    echo 'Estamos Aqui: '.$nome. ' Categoria: '.$categoria. ' Telefone: '.$telefone; // concatenamos
+});
+
+// Se nenhuma informaçao for enviada, receberá como valor padrão 'Telefone não Informado'. O Laravel tem limitaçao com parametros opcionais,por ex, nao posso definir que o nome é opcional, pois o Laravel irá se perder na hora de sequenciar os parametros. então, os parametros opcionais devem ser passados da direita para esquerda, de modo que o Laravel saiba sequenciar os parametros que está recebendo.
+exs:
+Route::get('/contato/{nome?}/{categoria}/{telefone?}', function (string $nome = Nenhum, string $categoria, string $telefone = 'Telefone não Informado') {
+    echo 'Estamos Aqui: '.$nome. ' Categoria: '.$categoria. ' Telefone: '.$telefone; // concatenamos
+});
+/\ daria erro, pois é da direita p esquerda. telefone teria q ser opcional, categoria tambem, para ai sim o 'nome' ser opcional.
+
+/////////////
+
+Tratando parametros de rotas com expressoes regulares-
+As rotas só serão processadas se os parametros enviados forem compativeis com as condiçoes que estabelecermos previamente para cada um deles.
+Route::get('/contato/{nome}/{categoria_id}', function (string $nome, string $categoria_id) {
+    echo "Estamos Aqui: $nome - $categoria_id" // concatenamos
+});
+
+/\ na categoria, no formulario de contato, seria um select com possibilidades de categorias.
+
+Route::get('/contato/{nome}/{categoria_id}', function (
+    string $nome = 'Desconhecido',
+    int $categoria_id = 1 // 1 - Informação
+    ) {
+        echo "Estamos Aqui: $nome - $categoria_id"; // concatenamos
+    }
+);
+
+/\ ao digitar: http://127.0.0.1:8000/contato/Ana/2 , irá numa boa, mas se eu digitar '/Ana/Duvidas', vai dar erro, pois eu tipei a variável como int. para tratar este tipo de situaçao, usemos expressões regulares, usando tratamento especifico para cada parametro da rota, isto é, em vez de erro do php, usamos expressoes regulares para indicar quais condiçoes para dizer qual parametro esta apto para receber tal categoria. em categoria podemos usar expressao regular pra dizer q ele precisa ser combinaçao de caracteres q tenha apenas numeros e q vá de 1 a 9. usamos: ->where('', '');
+
+Route::get('/contato/{nome}/{categoria_id}', function (
+    string $nome = 'Desconhecido',
+    int $categoria_id = 1 // 1 - Informação
+    ) {
+        echo "Estamos Aqui: $nome - $categoria_id"; // concatenamos
+    }
+)->where('categoria_id', '[0-9]+'); // o primeiro parametro é o nome do parametro que estamos recebendo na rota, no caso, categoria_id, o 2 parametro é a expressão regular para aceitarmos ou não o parametro de categoria_id. como dito, precisa ser um parametro numerico, precisa estar entre 0 e 9, e pelo menos um caractere.
+
+// expressao regular pro nome agora, faça nova chamada com o parametro where:
+Route::get('/contato/{nome}/{categoria_id}', function (
+    string $nome = 'Desconhecido',
+    int $categoria_id = 1 // 1 - Informação
+    ) {
+        echo "Estamos Aqui: $nome - $categoria_id"; // concatenamos
+    }
+)->where('categoria_id', '[0-9]+')->where('nome', 'A-Za-z'+); -> A-Z e a-z e pelo menos 1 caractere 
