@@ -24,7 +24,7 @@ agora, para iniciar a aplicação basta usar:
 
 php artisan serve
 
-/\ bem melhor que uisar php -S ....
+/\ bem melhor que usar php -S ....
 
 pra definir a porta:
 php artisan serve --port=9000
@@ -97,7 +97,7 @@ ao acessar http://127.0.0.1:8000/sobre-nos e http://127.0.0.1:8000/contato , que
 O objeto 'Route' é quem vai cuidar de toda essa parte de roteamento da aplicação e definimos as rotas e os métodos verbos HHTP através do método 'get'.
 // VERBOS HTTP:
 get
-possibilitando
+post
 put
 patch
 delete
@@ -119,8 +119,8 @@ Controladores:
 
 Os controllers servem para agrupar a lógica que deve ser feita em função da rota acessada por um determinado cliente. Ao fazermos uma requisição para o servidor, isto é, ao acessarmos uma rota da aplicação, essa rota por sua vez estará associado a um Controller e uma action, ou seja, a um controlador e a uma ação dentro desse controlador, contendo a lógica do que deve ser feito em função da rota q foi acessada.
 essa separação entre rotas e controladores permite separar melhor o código, definindo responsabilidades claras para cada parte do framework.
-embora as rotas implimentem funções de callback, e essas funçoes de callback possam ser usadas para definir toda logica com base na rota a ser acessada, o ideal é direcionarmos as requisiçoes para os controladores, para ai sim iniciarmos as tratativas com base nas requisições, mantendo portanto a separação clara entre rotas e separadores.
-separaçao importante pq em rotas temos orientaçao mais focadas para questoes tecnicas das aplicações em si, nos verbos HTTP utilizados, bem como nos middlewares que podem ser usadas nas requisiçoes e respostas
+embora as rotas implimentem funções de callback, e essas funçoes de callback possam ser usadas para definir toda logica com base na rota a ser acessada, o ideal é direcionarmos as requisiçoes para os controladores, para ai sim iniciarmos as tratativas com base nas requisições, mantendo portanto a separação clara entre rotas e controladores.
+separaçao importante pq em rotas temos implementações mais focadas para questoes tecnicas das aplicações em si, nos verbos HTTP utilizados, bem como nos middlewares que podem ser usadas nas requisiçoes e respostas
 já no Controller é mais necessaria para atender os requisitos do negocio, é bem nos action que vamos definir o que a funçao deve fazer pelo que foi requisitado através de uma Rota.
 
 /////////////
@@ -271,3 +271,826 @@ Route::get('/contato/{nome}/{categoria_id}', function (
         echo "Estamos Aqui: $nome - $categoria_id"; // concatenamos
     }
 )->where('categoria_id', '[0-9]+')->where('nome', 'A-Za-z'+); -> A-Z e a-z e pelo menos 1 caractere 
+
+///////////////
+
+Criando o menu de navegação -
+Implementar menu de navegação entre as views pra permitir navegar entre as rotas de aplicação.
+
+Dentro da view principal.blade.php:
+<h2>Principal (view)</h2>
+
+<ul>
+    <li>
+        <a href="/"> Principal</a> // aqui, a rota que leva para a pagina 'principal' é '/', conforme se vê em web.php
+    </li>
+    <li>
+        <a href="/sobre-nos">Sobre Nós</a>
+    </li>
+    <li>
+        <a href="/contato">Contato</a>
+    </li>
+</ul>
+
+// /\ coloquemos este codigo em contato e em sobre-nos
+
+// com o php artisan, temos um comando chamado: route:list, que permite listar as rotas criadas dentro do projeto. use: php artisan route:list. o visual code permite usar 2 terminais ao mesmo tempo.
+
+////////////////
+
+Implementando as rotas login, clientes, fornecedores e produtos -
+Vamos em 'web.php', e adicionemos as routes::get, novas rotas.
+
+Route::get('/login', function() { return 'Login'; });
+
+Route::get('/clientes', function() { return 'Clientes'; });
+
+Route::get('/fornecedores', function() { return 'Fornecedores'; });
+
+Route::get('/produtos', function() { return 'Produtos'; });
+
+//////////////
+
+Agrupando Rotas -
+Agrupar rotas usando um prefixo.
+Vamos pegar as 3 rotas novas que criamos, clientes, fornecedores e produtos, e agrupar em uma rota chamada 'app'.
+para definir o prefixo, basta usar o objeto 'Route::' chamando o método prefix(), esse método espera por parametro o prefixo a ser utilizado, e chamamos em sequencia o metodo 'group' que espera uma função callback com todas as rotas q farão parte desse grupamento q serão acessadas a partir do prefixo dado.
+Em web.php:
+
+Route::prefix('/app')->group(function() {
+    Route::get('/clientes', function() { return 'Clientes'; });
+    Route::get('/fornecedores', function() { return 'Fornecedores'; });
+    Route::get('/produtos', function() { return 'Produtos'; });
+});
+
+////////////////
+
+Nomeando Rotas -
+Como nomear rotas da aplicação? Permitindo chamar as rotas pelo nome, e não pelo caminho absoluto. Basta que, em web.php, após a chamada do metodo 'get', chamemos outro método chamado 'name', passando como parametro o nome que deseja. pode ser o nome que quiser.
+
+------> os names podem ser usados com os métodos 'helpers' do framework Laravel. significa que os names podem ser utilizados apenas dentro da propria logica da nossa aplicação.
+
+Route::get('/', [\App\Http\Controllers\PrincipalController::class, 'principal'])->name('site.index');
+Route::get('/sobre-nos', [\App\Http\Controllers\SobreNosController::class, 'sobreNos'])->name('site.sobrenos');
+
+Route::get('/contato', [\App\Http\Controllers\ContatoController::class, 'contato'])->name('site.contato');
+
+Route::get('/login', function() { return 'Login'; })->name('site.login');
+
+Route::prefix('/app')->group(function() {
+    Route::get('/clientes', function() { return 'Clientes'; })->name('app.clientes');
+    Route::get('/fornecedores', function() { return 'Fornecedores'; })->name('app.fornecedores');
+    Route::get('/produtos', function() { return 'Produtos'; })->name('app.produtos');
+});
+
+/\ // isso não significa q se eu chamar: localhost:8000/app.clientes vai funcionar. vai dar erro. apenas significa que a rota localhost:8000/rotas/app/clientes vai ter um nome chamado app.clientes, um apelido pra chamada dessa rota. vamos numa view qualquer, pd ser principal.blade.php, lá temos nossa view com nossas referencias absolutas (/, /sobrenos e /contato). como temos nomeaçao das rotas, agora podemos usar esses apelidos. apenas basta usarmos: {{ route('nomedoalias') }} passa como apelido pra nossa rota. 
+
+
+no principal.blade.php:
+<h2>Principal (view)</h2>
+
+<ul>
+    <li>
+        <a href="{{ route('site.index') }}"> Principal</a>
+    </li>
+    <li>
+        <a href="{{ route('site.sobrenos') }}">Sobre Nós</a>
+    </li>
+    <li>
+        <a href="{{ route('site.contato') }}">Contato</a>
+    </li>
+</ul>
+
+// passando como rota alias/nome, o laravel retorna o caminho. a vantagem é não ter dependencia absoluta com a rota, caso mude o caminho em web.php. 
+
+/////////////////
+
+Redirecionamento de rotas -
+Permite redirecionar o fluxo de navegação do usuário pela aplicação web.
+Cair em uma rota e ser redirecionado para outra rota.
+
+vamos passar um método 'redirect':
+
+Dentro do web.php:
+Route::get('/rota1', function() {
+    echo 'Rota 1';
+})->name('site.rota1');
+
+Route::get('/rota2', function() {
+    echo 'Rota 2';
+})->name('site.rota2');
+
+Route::redirect('/rota2', '/rota1'); // ao acessarmos '/rota2', seremos redirecionados para '/rota1'.
+
+// -------> passando agora no callback da rota2:
+
+Route::get('/rota1', function() {
+    echo 'Rota 1';
+})->name('site.rota1');
+
+Route::get('/rota2', function() {
+    return redirect()->route('site.rota1'); // redirecionamento no contexto da funçao de callback de uma rota agora.
+})->name('site.rota2');
+
+
+///////////////
+
+Rota de contingência (fallback) -
+É uma rota que vai ser disponibilizada para o usuário caso a rota acessada por ele não seja localizada dentro do sistema de rotas da nossa aplicação. Ou seja, se tentar acessar uma rota inexistente, a rota direcionada pro usuário será a rota de contigência, pra evitar que mostre um erro de página não encontrada (error 404).
+
+Basta usar o objeto route seguindo do metodo fallback passando como parametro uma funçao de callback.
+
+em web.php:
+
+Route::fallback(function() {
+    echo 'A rota acessada não existe. <a href="'.route('site.index').'"> Clique aqui </a> para ir para a página inicial.';
+});
+
+// ao tentar acessar agora uma pagina inexistente, irá mostrar essa mensagem de erro.
+
+///////////////////
+
+Encaminhando parametros da rota para o controlador -
+Basicamente, pela rota iremos passar parametros que irão para o controlador.
+
+Em web.php:
+
+Route::get('/teste/{p1}/{p2}', [\App\Http\Controllers\TesteController::class, 'teste'])->name('site.rota1'); // recebendo 2 parametros, que serão obrigatórios (p1 e p2). procurará o método 'teste' dentro do controlador 'TesteController' e executará.
+
+no terminal, digito:
+php artisan make:controller TesteController // passando o nome do controlador TesteController.
+
+dentro da classe TesteController, neste controlador, escrevo dentro o metodo 'teste', e coloco os parametros que desejamos receber que colocamos no web.php:
+
+public function teste(int $p1, int $p2) // botei p1 e p2, mas n necessariamente tem q ser os mesmos nomes, oq importa é a ordem. tipei parametros como inteiros. 
+{
+    echo "A soma de p1 + p2 é: " . ($p1 + $p2);
+}
+
+////////////////////////
+
+Encaminhando parâmetros do controlador para visualização - 
+Enviando parametros do controlador para uma determinada view. Pra isso, podemos usar array associativo, metodo compact() do PHP que cria um array associativo baseado em parametros ou podemos usar o método With(). 
+
+como estamos usando uma rota de teste e controlador de teste, vamos criar tbm uma view de teste. 
+
+vms criar uma view de teste.
+
+dentro do metodo teste no controlador teste, precisamos agr retornar uma view.
+
+class TesteController extends Controller
+{
+    public function teste(int $p1, int $p2) 
+    {
+        return view('site.teste', ['x' => $p1, 'y' => $p2]);
+    }
+}
+
+como encaminhar esses parametros $p1 e $p2 para a view? usamos array associativo como o 2º parametro da view. no contexto da view, o 'x' vai virar uma variavel. mesma coisa com o 'y'. 
+
+dentro da view teste.blade.php:
+P1 = {{ $x }}
+<br/>
+P2 = {{ $y }}
+
+// foi usado x e y so pra ver q poderia ser qq nome, mas o ideal é usar o msm nome, boa pratica. $p1 e $p2.
+
+------> Outro jeito seria usando o método compact:
+
+Como 2o parametro do metodo view, passamos o metodo compact, e dentro encaminhamos os nomes das variaveis que queremos que sejam submetidas a view, ele recupera os parametros do metodo.
+
+class TesteController extends Controller
+{
+    public function teste(int $p1, int $p2) 
+    {
+        return view('site.teste', compact('p1', 'p2')); // criará um array associativo onde o indice sera o nome da variavel, e o valor será o valor contido na respectiva variável.
+    }
+}
+
+na view, se fizessemos:
+P1 = {{ $p1 }}
+<br/>
+P2 = {{ $p2 }}
+
+// /\ iria funcionar normal. 
+
+---------> Com o método With() agora:
+
+não passemos um 2o parametro, mas em seguida chamemos o metodo 'with' q recebe 2 parametros: o 1o parametro é o nome da variavel no lado da view, e o 2 parametro é seu respectivo valor.
+
+class TesteController extends Controller
+{
+    public function teste(int $p1, int $p2) 
+    {
+        return view('site.teste')->with('xyz', $p1)->with('zzz', $p2); 
+    }
+}
+
+///////////////
+
+Sintaxe Blade -
+É o motor de renderizaçao de views do laravel. possui poder de herança de template, q possibilita q views incluem, modificam outras views, etc. 
+
+//////
+
+Blade - incluindo comentários e blocos php puros:
+
+Vms implementar um novo controlador, o 'FornecedorController', para a rota 'fornecedores', e dentro desse controlador vamos criar um método index(), que vai apontar para uma nova view (app.fornecedor.index), e dentro, sim, dessa view, iremos trabalhar com a sintaxe blade.
+
+dentro do web.php, no '.app':
+    Route::get('/fornecedor', [\App\Http\Controllers\FornecedorController::class, 'index'])->name('app.fornecedores');
+
+digito no terminal:
+php artisan make:controller FornecedorController
+
+dentro do controlador:
+class FornecedorController extends Controller
+{
+    public function index() {
+        return view('app.fornecedor.index');
+    }
+}
+
+// precisamos agr criar a view 'index', q tá dentro da pasta fornecedor q ta dentro da pasta 'app'. ja tinhamos criado 'app', agora criamos pasta 'fornecedor' e nela 'index.blade.php'. digitemos dentro do index <h3>fornecedor</h3>
+
+// Agora, vejamos como criamos comentários usando a sintxe blade, basta usar: {{-- COMENTÁRIO AQUI --}} 
+
+// Incluindo PHP Puro na view:
+@php
+
+// aqui, podemos comentar usando a sintaxe nativa do php. /* ... */ tbm
+
+echo 'Texto de teste'; // codificação php pura dentro desse bloco
+
+@endphp
+
+// Entenda que o {{}} é como se fosse a tag curta do php <?= ?>, se fosse {{ 'Texto de Teste' }}
+
+///////////////
+
+If/Else no blade php -
+
+// No caso de PHP nativo, usa-se assim:
+
+@php
+
+if() {
+    
+} elseif() {
+
+} else {
+
+}
+
+@endphp
+
+// Para o blade php, é um pouco diferente:
+class FornecedorController extends Controller
+{
+    public function index() {
+        $fornecedores = ['Fornecedor 1'];
+        
+        return view('app.fornecedor.index', compact('fornecedores')); // ao usar a variavel 'fornecedores', o laravel ja entende que vai ter q criar uma outra variavel com o mesmo nome 'fornecedores' no lado da view.
+    }
+}
+
+no arquivo 'index.blade.php':
+se usarmos {{$fornecedores}}, não irá funcionar, pq o blade não consegue imprimir um array. portanto, iremos usar um metodo diferente no blade, q é com o @dd :
+
+@dd($fornecedores) // irá mostrar o array.
+
+agora, usemos if else com base nessa variavel. no blade php, usemos sempre @ pra indicar um comando, um comando que precisa ser interpretado pelo blade, pra q esse comando seja interpretado pelo php.
+-----> no blade php, não utilizamos ';' para encerrar os comandos.
+
+no blade:
+@if(count($fornecedores) > 0 && count(fornecedores < 10)) 
+    <H3> Existem alguns fornecedores cadastrados. </h3>
+@elseif(count($fornecedores) > 10 )
+    <h3> Existem vários fornecedores cadastrados. </h3>
+@else 
+    <h3> Ainda não existem fornecedores cadastrados. </h3>
+@endif
+
+///////////////
+
+Blade - @unless :
+Operador de decisao @unless, basicamente é uma inversão do operador if. O if analisa o retorno positivo de uma condiçao, o unless faz o inverso. Unless não tem ligaçao direta com comando php, funciona mais como um atalho. Pode usar ele ou !if.
+
+No FornecedorController:
+class FornecedorController extends Controller
+{
+    public function index() {
+        $fornecedores = [
+            0 => ['nome' => 'Fornecedor 1', 'status' => 'N']
+        ];
+        
+        return view('app.fornecedor.index', compact('fornecedores'));
+    }
+}
+
+No index.blade.php:
+Fornecedor: {{ $fornecedores[0]['nome']}}
+<br>
+Status: {{ $fornecedores[0]['status']}}
+<br>
+@if( !($fornecedores[0]['status'] == 'S') )
+    Fornecedor inativo
+@endif
+
+// Usando o unless:
+Útil para substituir a linha de codigo do if acima, em vez de usar ! , usemos: unless
+@unless($fornecedores[0]['status'] == 'S') <!-- executa se o retorno da condição for false -->
+    Fornecedor inativo
+@endunless
+
+////////////
+
+Usando o @isset
+
+No php nativo:
+@php
+
+if(isset($variavel)) {} // retornar true se a variavel estiver definida
+
+@endphp
+
+No FornecedorController.php:
+class FornecedorController extends Controller
+{
+    public function index() {
+        $fornecedores = [
+            0 => ['nome' => 'Fornecedor 1', 
+            'status' => 'N', 
+            'cnpj' => '00.000.000/000-00'
+        ],
+        1 => ['nome' => 'Fornecedor 2', 
+            'status' => 'S', 
+            'cnpj' => '00.000.000/000-00'
+        ],
+        ];
+        
+        return view('app.fornecedor.index', compact('fornecedores'));
+    }
+}
+
+Ussando @isset, no index.blade.php:
+@isset($fornecedores)
+    Fornecedor: {{ $fornecedores[1]['nome']}}
+    <br/>
+    Status: {{ $fornecedores[1]['status']}}
+    <br/>
+    @isset($fornecedores[1]['cnpj'])
+        CNPJ: {{ $fornecedores[1]['cnpj']}}
+    @endisset
+@endisset
+
+//////////////////
+
+Blade @empty -
+Podemos usar o operador @empty como atalho, já que no php 'empty' é um operador usado dentro do if else pra testar se a variavel possui algum valor. retorna true se a variavel estiver vazia. 
+--------------> pro php uma variavel é vazia qd a ela é atribuida os valores: '', 0, 0.0, '0', null, false, array(), $var (variavel apenas declarada sem atribuiçao de valor). 
+Vejamos fazendo um teste:
+
+No FornecedorController.php:
+class FornecedorController extends Controller
+{
+    public function index() {
+        $fornecedores = [
+            0 => ['nome' => 'Fornecedor 1', 
+            'status' => 'N', 
+            'cnpj' => ''
+        ],
+        1 => ['nome' => 'Fornecedor 2', 
+            'status' => 'S', 
+            'cnpj' => '00.000.000/000-00'
+        ],
+        ];
+        
+        return view('app.fornecedor.index', compact('fornecedores'));
+    }
+}
+
+No index.blade.php:
+@isset($fornecedores)
+    Fornecedor: {{ $fornecedores[0]['nome']}}
+    <br/>
+    Status: {{ $fornecedores[0]['status']}}
+    <br/>
+    @isset($fornecedores[0]['cnpj'])
+        CNPJ: {{ $fornecedores[0]['cnpj']}}
+        @empty($fornecedores[0]['cnpj'])
+            - Vazio
+        @endempty
+    @endisset
+@endisset
+
+//////////////////////////
+
+Operador Condicional Ternário Extra -
+Recurso do PHP, não depende do Laravel. 
+
+No FornecedorController.php:
+class FornecedorController extends Controller
+{
+    public function index() {
+        $fornecedores = [
+            0 => ['nome' => 'Fornecedor 1', 
+            'status' => 'N', 
+            'cnpj' => ''
+        ],
+        1 => ['nome' => 'Fornecedor 2', 
+            'status' => 'S', 
+            'cnpj' => '00.000.000/000-00'
+        ],
+        ];
+
+        $msg = isset($fornecedores[1]['cnpj']) ? 'CNPJ informado' : 'CNPJ não informado';
+        echo $msg;
+
+        return view('app.fornecedor.index', compact('fornecedores'));
+    }
+
+}
+
+Operador ternario é mt usado para atribuiçao de valor a uma variavel, como no caso acima com o $msg.
+
+////////////////
+
+Operador condicional de valor default (??) -
+Valor default funciona como um atalho para operadores condicionais ternários.
+
+No index.blade.php:
+@isset($fornecedores)
+    Fornecedor: {{ $fornecedores[0]['nome']}}
+    <br/>
+    Status: {{ $fornecedores[0]['status']}}
+    <br/>
+    CNPJ: {{ $fornecedores[0]['cnpj'] ?? 'Dado não informado'}} // caso a variavel cnpj esteja null ou sem definição irá entrar pra um valor default. nesse caso, 0 não é um valor default.
+    <!--
+        se $variavel testada não estiver definida (isset)
+        ou
+        $variavel testada possuir o valor null
+    -->
+@endisset
+
+e no FornecedorController.php:
+
+class FornecedorController extends Controller
+{
+    public function index() {
+        $fornecedores = [
+            0 => ['nome' => 'Fornecedor 1', 
+            'status' => 'N', 
+            'cnpj' => null
+        ],
+        1 => ['nome' => 'Fornecedor 2', 
+            'status' => 'S', 
+            'cnpj' => '1'
+        ],
+        ];
+
+        $msg = isset($fornecedores[1]['cnpj']) ? 'CNPJ informado' : 'CNPJ não informado';
+        echo $msg;
+
+        return view('app.fornecedor.index', compact('fornecedores'));
+    }
+
+}
+
+///////////////////////////////
+
+Blade @switch/case:
+
+No FornecedorController criaremos 2 novos índices dentro de cada um dos arrays que representam os fornecedores, ddd e telefone: 
+
+no FornecedorController.php:
+public function index() {
+        $fornecedores = [
+            0 => ['nome' => 'Fornecedor 1', 
+            'status' => 'N', 
+            'cnpj' => null,
+            'ddd' => 21,
+            'telefone' => 0000-000
+            ],
+            1 => ['nome' => 'Fornecedor 2', 
+                'status' => 'S', 
+                'cnpj' => '1',
+                'ddd' => 11,
+                'telefone' => 0000-000
+            ],
+            2 => ['nome' => 'Fornecedor 2', 
+                'status' => 'S', 
+                'cnpj' => '1',
+                'ddd' => 61,
+                'telefone' => 0000-000
+            ]
+        ];
+
+        $msg = isset($fornecedores[1]['cnpj']) ? 'CNPJ informado' : 'CNPJ não informado';
+        echo $msg;
+
+        return view('app.fornecedor.index', compact('fornecedores'));
+    }
+
+na view index.blade.php em view\app\fornecedor:
+
+
+@isset($fornecedores)
+    Fornecedor: {{ $fornecedores[1]['nome']}}
+    <br/>
+    Status: {{ $fornecedores[1]['status']}}
+    <br/>
+    CNPJ: {{ $fornecedores[1]['cnpj'] ?? ''}}  {{-- se for null aplico um texto vazio --}}
+    <br/>
+    Telefone: {{ $fornecedores[1]['ddd'] ?? ''}} {{ $fornecedores[1]['telefone'] ?? ''}}
+
+    @switch($fornecedores[1]['ddd']) {{-- passando como parametro o que ele quer q escolha --}}
+        @case('11')
+            São Paulo - SP
+        @break
+
+        @case ('21')
+            Rio de Janeiro - RJ
+        @break
+
+        @case ('61')
+            Brasília - DF
+        @break
+
+        @default
+            Estado não identificado
+    @endswitch
+@endisset
+
+/////////////////////
+
+Blade - @for =>
+Através dele podemos implementar estruturas de repetição em nossos códigos.
+
+@for($i = 0; $i < 10; $i++)
+
+    {{ $i }} <br/> {{-- impressão do $i --}}
+
+@endfor
+ 
+Na prática:
+dentro de index.blade.php:
+
+
+@isset($fornecedores)
+
+    @for($i=0; isset($fornecedores[$i]); $i++)
+        Fornecedor: {{ $fornecedores[$i]['nome']}}
+        <br/>
+        Status: {{ $fornecedores[$i]['status']}}
+        <br/>
+        CNPJ: {{ $fornecedores[$i]['cnpj'] ?? ''}}  {{-- se for null aplico um texto vazio --}}
+        <br/>
+        Telefone: {{ $fornecedores[$i]['ddd'] ?? ''}} {{ $fornecedores[$i]['telefone'] ?? ''}}
+
+        <hr/>
+    @endfor
+
+@endisset
+
+// vai imprimir cada um dos fornecedores, <hr> é pra ter linha divisória
+
+///////////////
+
+Blade @while -
+@isset($fornecedores)
+
+    @php $i = 0; @endphp
+    @while(isset($fornecedores[$i]))
+        Fornecedor: {{ $fornecedores[$i]['nome']}}
+        <br/>
+        Status: {{ $fornecedores[$i]['status']}}
+        <br/>
+        CNPJ: {{ $fornecedores[$i]['cnpj'] ?? ''}}  {{-- se for null aplico um texto vazio --}}
+        <br/>
+        Telefone: {{ $fornecedores[$i]['ddd'] ?? ''}} {{ $fornecedores[$i]['telefone'] ?? ''}}
+
+        <hr/>
+        @php $i ++ @endphp
+    @endwhile
+@endisset
+
+// como o while nao tem inicio de variavel nem iteraçao, abrimos a tag php e iteramos.
+
+//////////////
+
+Blade @foreach -
+
+Dentro do index.blade.php:
+@isset($fornecedores)
+
+    @foreach($fornecedores as $indice => $fornecedor) {{-- cada um dos indices teremos em $indices e iremos atribuir a esses indices os dados de cada um dos fornecedores --}}
+        Fornecedor: {{ $fornecedor['nome']}}
+        
+        <br/>
+        Status: {{ $fornecedor['status']}}
+        <br/>
+        CNPJ: {{ $fornecedor['cnpj'] ?? ''}}  {{-- se for null aplico um texto vazio --}}
+        <br/>
+        Telefone: {{ $fornecedor['ddd'] ?? ''}} {{ $fornecedor['telefone'] ?? ''}}
+
+        <hr/>
+    @endforeach
+@endisset
+
+/////////////////
+
+Blade - @forelse
+
+@forelse é uma sintaxe unica do blade, q funciona como combinaçao do foreach com condicional pra verificar se o array está ou não vazio. se houver itens a serem executados no array, o bloco é executado; senão, o fluxo é desviado. Sintaxe é a msm do foreach, mas temos o @empty para desviar o fluxo.
+
+@isset($fornecedores)
+    @forelse($fornecedores as $indice => $fornecedor) {{-- cada um dos indices teremos em $indices e iremos atribuir a esses indices os dados de cada um dos fornecedores --}}
+        Fornecedor: {{ $fornecedor['nome']}}
+        
+        <br/>
+        Status: {{ $fornecedor['status']}}
+        <br/>
+        CNPJ: {{ $fornecedor['cnpj'] ?? ''}}  {{-- se for null aplico um texto vazio --}}
+        <br/>
+        Telefone: {{ $fornecedor['ddd'] ?? ''}} {{ $fornecedor['telefone'] ?? ''}}
+
+        <hr/>
+    @empty
+        Não existem fornecedores cadastrados.
+    @endforelse
+@endisset
+
+//////////////////////
+
+Escapando a tag de impressão do Blade -
+Para dizer que certo trecho de bloco não seja executado, não seja interpretado coloque @ antes de {{}}
+
+
+@isset($fornecedores)
+
+    @forelse($fornecedores as $indice => $fornecedor) {{-- cada um dos indices teremos em $indices e iremos atribuir a esses indices os dados de cada um dos fornecedores --}}
+        Fornecedor: @{{ $fornecedor['nome']}}
+        <br/>
+        Status: @{{ $fornecedor['status']}}
+        <br/>
+        CNPJ: @{{ $fornecedor['cnpj'] ?? ''}}  {{-- se for null aplico um texto vazio --}}
+        <br/>
+        Telefone: @{{ $fornecedor['ddd'] ?? ''}} @{{ $fornecedor['telefone'] ?? ''}}
+
+        <hr/>
+    @empty
+        Não existem fornecedores cadastrados.
+    @endforelse
+@endisset
+
+/////////////////
+
+Blade - Variável Loop -
+Temos o objeto $loop, 
+
+@isset($fornecedores)
+
+    @forelse($fornecedores as $indice => $fornecedor) {{-- cada um dos indices teremos em $indices e iremos atribuir a esses indices os dados de cada um dos fornecedores --}}
+        Iteração atual: {{ $loop->iteration }}
+        <br/>
+        Fornecedor: {{ $fornecedor['nome']}}
+        <br/>
+        Status: {{ $fornecedor['status']}}
+        <br/>
+        CNPJ: {{ $fornecedor['cnpj'] ?? ''}}  {{-- se for null aplico um texto vazio --}}
+        <br/>
+        Telefone: {{ $fornecedor['ddd'] ?? ''}} {{ $fornecedor['telefone'] ?? ''}}
+
+        <hr/>
+    @empty
+        Não existem fornecedores cadastrados.
+    @endforelse
+@endisset
+
+Temos tbm o $iteration->first, que diz se a iteração que a gente está é a primeira. Temos o last e o $loop->count
+
+@isset($fornecedores)
+
+    @forelse($fornecedores as $indice => $fornecedor) {{-- cada um dos indices teremos em $indices e iremos atribuir a esses indices os dados de cada um dos fornecedores --}}
+        Iteração atual: {{ $loop->iteration }}
+        <br/>
+        Fornecedor: {{ $fornecedor['nome']}}
+        <br/>
+        Status: {{ $fornecedor['status']}}
+        <br/>
+        CNPJ: {{ $fornecedor['cnpj'] ?? ''}}  {{-- se for null aplico um texto vazio --}}
+        <br/>
+        Telefone: {{ $fornecedor['ddd'] ?? ''}} {{ $fornecedor['telefone'] ?? ''}}
+        <br/>
+        @if($loop->first)
+            Primeira iteração do Loop
+        @endif
+        
+        @if($loop->last)
+            Primeira iteração do Loop
+            <br/>
+            Total de registros: {{ $loop->count }}
+        @endif
+        
+        <hr/>
+    @empty
+        Não existem fornecedores cadastrados.
+    @endforelse
+@endisset
+
+E se quiser mostrar mais detalhado, atributos do objeto, etc use @dd($loop) logo depois do forelse.
+
+/////////////////
+
+Super Gestão - Melhorando o Visual -
+Baixamos novo arquivo 'views.zip' na aula e substituimos.
+
+digitemos no terminal -> php artisan view:clear
+
+php artisan serve 
+
+vamos usar as views que ele colocou. 
+
+////////////////////
+
+Assets -
+Qd trabalhamos com front-end em aplicaçao web, ouve-se muito assets. Ele representa tudo aquilo que é utilizado para complementar o conteudo do front-end das aplicaçoes web (midias, imagens, estilos css, javascript, etc)
+
+/////////////////
+
+Adicionando Assets às views -
+baixemos arquivo chamado img.zip, e, dentro da pasta 'public' no projeto, coloquemos o diretório img. Todas as mídias que complementam nossas páginas HTML, devem ser colocadas no diretório 'public' da aplicaçao para que elas possam ser requisitadas através da internet; arquivos JS, CSS, imagem, video, som, etc, todos esses assets q acompanham o HTML precisam estar publicas. 
+
+No principal.blade.php, vemos:
+<div class="logo">
+    <img src="img/logo.png">
+</div>
+
+o diretorio 'img' tem q estar dentro do diretorio 'public'. esse é o modo relativo.
+o modo mais apropriado de incluir assets em nossas views é através da utilização de um helper do laravel chamado asset(''), onde dentro coloco uma string com referencia. com o asset podemos configurar a raiz dos nossos assets, entao com isso tenho mais flexibilidade em ter mudança de onde localizar nossos arquivos.
+
+<div class="logo">
+    <img src="{{ asset('img/logo.png')}}">
+</div>
+
+agora basta fazer o mesmo para todos os img src.
+
+//////////////////////
+
+Adicionando arquivos CSS externos as páginas web - 
+
+Vamos separar os <style> em arquivos css externos para minimizar o tamanho de nossas views.
+Dentro do diretorio 'public', criemos um diretorio 'css', colocaremos num arquivo q esteja dentro de css.
+dentro da pasta 'css', colocamos um arquivo chamado 'estilo_basico.css' e colocamos o codigo style css, q tem nas views, dentro dele. 
+
+Inclusão do css feito pela tag <link rel="stylesheet" href="{{asset('css/estilo_basico.css')}}">
+
+//////////////////////
+
+Blade - Template com @extends, @section e @yield parte 1
+
+Podemos começar nosso template centralizando as informações comuns entre as views. Permitindo que cada view faça sua especialização. 
+Dentro de 'views', no diretorio 'site', criaremos um novo diretorio chamado 'layouts', e dentro dele criar arquivo chamado 'basico.blade.php'.
+
+Como conectar nossa view com o template?
+Recortamos a parte inicial ate o 'body' de sobre-nos e colamos em 'basico.blade.php', e fechamos body e html no basico.blade.php.
+
+- Essa comunicação entre template e view é feita através da extensão @extends(), precisamos usá-lo na view que vai receber um template, que vai ser trabalhada com base em um template, pois qd acessarmos uma rota, a rota vai direcionar a requisiçao pra view que queremos acessar, portanto a view tem q indicar qual template ela quer extender.
+
+Em sobre-nos.php, damos @extends('site.layouts'). O 'extends' vai direto para o diretorio 'views' contido dentro de 'resources', precisamos então passar o caminho do nosso template através do diretório 'views':
+
+@extends('site.layouts.basico')
+
+// /\ agora, estamos conectando nosso template com nossa view. Próximo passo agora é pegar todo conteudo da nossa view e direcioná-lo para áreas especificas do nosso layout. Selecionamos na view o codigo html que queremos enviar como parametro para nosso layout. Iniciamos com section, damos um nome ela, e encerramos com endsection, q todo codigo q tiver nela será direcionado para o template. 
+
+--------> https://prnt.sc/e8AoH-DAfVQR
+
+Meu objetivo é pegar todo conteudo q tem dentro do body em sobre-nos, e colocar dentro do template em basico.blade.php
+
+Dentro de sobre-nos, depois de começar o body coloco @section('conteudo') e no final antes de fechar o body coloco @endsection. essa seçaõ 'conteudo' representa todo o codigo html encapsulado na seção. como o nome da seção q escolhemos é 'conteudo', vamos no template, em basico.blade.php, dentro do body escrevamos: @yield('conteudo').
+
+Façamos o mesmo paras outras views, com extends e section, em contato e em principal
+
+/////////////////
+
+Blade - Template com @extends, @section e @yield parte 2 -
+
+Ao navegar por cada pagina, verá que o title estará 'sobre nós' em cada página, para mudar isto, em 'basico.blade.php' mude o title para @yield('titulo'), q significa que o template estará apto para receber uma section com esse nome e aplicar nesse local um nome.
+dentro de contato.blade.php criemos uma @section, mas com um 2o parametro, onde o 2o parametro será o valor dele.
+
+contato.blade.php:
+@section('titulo', 'Contato')
+
+façamos em cada uma das views isso.
+
+Posso fazer passando por controller tbm:
+Agora troco por variável:
+@section('titulo', $titulo)
+
+e na renderizaçao das views dos controllers, passamos array associativo.
+
+em ContatoController.php:
+public function contato() {
+        return view('site.contato', ['titulo' => 'Contato (teste)']);
+    }
