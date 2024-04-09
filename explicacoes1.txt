@@ -1094,3 +1094,4 @@ em ContatoController.php:
 public function contato() {
         return view('site.contato', ['titulo' => 'Contato (teste)']);
     }
+    
