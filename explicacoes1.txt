@@ -709,7 +709,6 @@ class FornecedorController extends Controller
 
         return view('app.fornecedor.index', compact('fornecedores'));
     }
-
 }
 
 Operador ternario é mt usado para atribuiçao de valor a uma variavel, como no caso acima com o $msg.
@@ -1095,3 +1094,95 @@ public function contato() {
         return view('site.contato', ['titulo' => 'Contato (teste)']);
     }
     
+/////////////////////////
+
+Realizando include de views dentro de outras views -
+É como deslocar toda codificação de um lugar para o exato ponto de um include.
+
+Dentro do diretorio 'layouts' criemos um outro diretorio chamado '_partials'. Dentro dele, criemos um arquivo chamado 'topo.blade.php', e dentro dele vou colocar o conteudo que representa o topo da nossa aplicação, que encapsula o menu e a imagem. Dentro do arquivo 'principal.blade.php', vamos recortar a div 'topo' e colar nesse arquivo topo.blade.php que criamos. 
+
+Agora, no principal.blade.php, fazer o respectivo include:
+@include('site.layouts._partials.topo') {{-- ele já verifica automaticamente o diretorio views --}}
+
+A gente pode fazer o mesmo agora para outras views, sobre-nos e contato. Mas, em vez de fazer isso, basta colocar em 'basico.blade.php', q ali passamos a include na yield 'conteudo', e já é replicada para toda aplicação.
+
+////////////
+
+Super Gestão - Enviando formulário de contato -
+Vamos começar abrindo o formulario 'web.php' dentro de 'routes'.
+1o passo é definir os parametros de action (pra onde o formulario será enviado, qual rota) e o metodo (qual verbo http a ser utilizado);
+
+O objetivo vai ser enviar um formulario em contato e receber parametros através do 'get' na URL; 
+
+Dentro de contato.blade.php:
+<form action={{route('site.contato')}} method="get"> // posso omitir o method get, ja que por padrão é enviado 'get'
+
+coloco os 'names' e 'values' nos campos, select e options pra dar variavel aos campos. agora, significa na vdd que vai enviar o formulario vai ser enviado para site.contato, ou seja, q está definido em web.php, e por sua vez, vai acessar o metodo 'contato' dentro de 'ContatoController'.;
+
+////////////////////
+
+Enviando formulario de contato via POST -
+Agora vamos trabalhar com o método POST..
+
+1o passo é modificar o metodo de envio do formulario para 'POST'.
+Temos que criar uma rota que faça envio via POST.
+
+Em web.php adiciono:
+Route::post('/contato', [\App\Http\Controllers\ContatoController::class, 'contato'])->name('site.contato');
+// não preciso apagar a mesma routa com get (route::get)
+
+Mas ainda sim nao funciona, pq o laravel exige que todos formularios submetidos via POST tenham um Token, uma identificaçao que garanta que aquele formulario esteja sendo enviado via post pelo client daquela requisição. 
+Para isso, basta lá na view, em 'contato.blade.php,', dentro do 'form', incluir a tag: @csrf
+
+///////////////////
+
+Entendendo o token @csrf - 
+Significa: Falsificação de solicitação entre sites
+A vulnerabilidade de cross-site poderá ser minimizada com o @csrf, já que um token será disponibilizado à página legítima.
+
+//////////////
+
+Blade - Componentes (@component) -
+@component é um recurso para incluir views dentro de outras views. Parecido com include, mas são diferentes, no component é mais avançado, permitindo incluir mais trechos de codigos recorrentes.
+
+Podemos usar o formulário de contato como recorrente para reutilizar.
+
+Vamos criar um novo diretorio dentro de _layouts chamado de _componentes, e dentro dele criemos um novo arquivo chamado form_contato.blade.php, q é uma view normal. A ideia é trazer para esta view o formulario. Vamos no contato.blade.php e trazer o formulario 'form' para o form_contato.blade.php. Lembrando que um componente é uma view normal, a diferença é a forma como essa view é incluida dentro de outra view. 
+
+Em 'contato.blade.php', agora usamos a instrução @component e passamos como parametro a view a ser incluida nesse ponto a ser um componente, no mesmo lugar onde ficava o 'form':
+<div class="contato-principal">
+    @component('site.layouts._components.form_contato')
+    @endcomponent
+</div>
+
+- Façamos o mesmo para 'principal.blade.php', tiremos o form de lá. 
+
+///////////////////
+
+Enviando parametros para componentes -
+Podemos passar codificaçao html nos componentes. 
+Exemplo:
+
+Em contato.blade.php:
+<div class="contato-principal">
+    @component('site.layouts._components.form_contato')
+        <p>Testando</p>
+    @endcomponent
+</div>
+
+Em form_contato.blade.php:
+{{ $slot }} // antes do codigo começar.
+
+{{ $slot }} é para dizer para imprimir o que coloquei dentro de @component.
+
+- Podemos passar um array associativo imprimindo 'x'.
+Em contato.blade.php:
+@component('site.layouts._components.form_contato', [x => 35])
+    <p>Testando</p>
+@endcomponent
+
+Em form_contato.blade.php:
+antes do codigo coloco: {{ $x }}
+
+////////////////////
+
