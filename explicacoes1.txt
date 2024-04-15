@@ -1184,5 +1184,19 @@ Em contato.blade.php:
 Em form_contato.blade.php:
 antes do codigo coloco: {{ $x }}
 
-////////////////////
+/////////////////////
 
+Models, Migrations, Seeders, Factories, Banco de dados, Tinker e Eloquent ORM -
+
+Com Models, trazemos os beneficios da POO, dentre eles a reutilizaão de código. Um model é uma classe que vai representar um tipo de dado/um objeto no sistema. Dentro do terminal digitemos:
+php artisan make:model SiteContato 
+
+// criamos um model que vai representar cada um dos contatos feitos através do site (Super Gestão). Criaremos uma classe q será instanciada contendo os respectivos atributos de um contato, para que mais adiante este objeto possa ser persistido em nosso banco de dados. Passando a flag -m na criaçao de um modelo:
+
+php artisan make:model SiteContato -m // com isto, iremos automaticamente criar um modelo e também uma migration. 
+
+=======> Passar a flag -m se o objetivo for armazenar os dados desse objeto no banco de dados. Portanto, geralmente vai usar -m para criar uma migration. Geralmente vai querer salvar no banco de dados as informaçoes desse modelo/objeto. 
+
+Para cada modelo, é interessante criar uma migration, portanto, passar a flag -m para criar a migration, pq geralmente vc vai querer salvar no banco de dados as informaçoes do seu model/objeto, senão, vc não precisa passar a flag -m, pq os dados não seriam armazenados no banco. 
+
+Para acessarmos nosso modelo, vamos na raiz do diretorio 'app' e acessamos 'models': acharemos o 'SiteContato.php'. Veremos ali a classe SiteContato extendendo a classe Model. 
