@@ -1200,3 +1200,32 @@ php artisan make:model SiteContato -m // com isto, iremos automaticamente criar 
 Para cada modelo, é interessante criar uma migration, portanto, passar a flag -m para criar a migration, pq geralmente vc vai querer salvar no banco de dados as informaçoes do seu model/objeto, senão, vc não precisa passar a flag -m, pq os dados não seriam armazenados no banco. 
 
 Para acessarmos nosso modelo, vamos na raiz do diretorio 'app' e acessamos 'models': acharemos o 'SiteContato.php'. Veremos ali a classe SiteContato extendendo a classe Model. 
+
+/////////////////
+
+Implementando a Migration SiteContato - 
+
+Uma Migration nos permite modelar uma aplicação no banco de dados através do proprio PHP, ou seja, não vamos precisar usar o SQL pra definição das tabelas das aplicações. Nós podemos escrever as migraçoes atraves do proprio PHP e sempre q necessario podemos usar essa migraçoes para construir ou reconstruir as tabelas da aplicação no banco de dados. Ideal p/ projetos com varios programadores. Se cada programador tivesse cada instancia do BD em sua maquina, e ele fizesse uma alteraçao local ele teria que notificar todos os outros, com migraçoes isso ficaria mais facil. 
+
+Migrations ficam dentro do diretório 'database' do nosso projeto, dentro do diretorio 'migrations'. quando criamos o modelo, criamos no singular, pq ele representa um objeto daquele tipo. Já as tabelas são criadas no plural, entao o proprio laravel acrescente o 's' no final, já que vamos criar uma coleção. 
+
+Toda tabela, no arquivo migration, já é criada com 2 atributos por padrão, id (atualizaçao do registro) e timestamps (Data e criaçao do registro), veja:
+$table->id();
+$table->timestamps();
+
+no migration podemos executar o metodo 'up' para criar essas tabelas, e o metodo 'down' volta atrás, isto é, reverte as operaçoes feitas pelo método up.
+nesse site vejo os tipos disponiveis, e ai posso colocar mais tipos:
+https://laravel.com/docs/11.x/migrations#available-column-types
+
+no metodo up:
+$table->string('nome', 50);
+$table->id();
+$table->timestamps();
+$table->string('nome', 50);
+$table->string('nome', 50);
+
+////////////////////////
+
+Configurando o BD SQLite e executantado as migrations -
+
+/config/database.php -> guarda as conexões com os banco de dados. nele, ja temos algumas conexoes pré-estabelecidas pelo PHaP. as migrations podem ser executadas por padrão em qualquer um desses banco de dados. o metodo 'env' verifica a existencia das variaveis de ambiente, e utiliza-as na composiçao das strings de conexao. 
