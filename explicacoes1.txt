@@ -1228,4 +1228,144 @@ $table->string('nome', 50);
 
 Configurando o BD SQLite e executantado as migrations -
 
-/config/database.php -> guarda as conexões com os banco de dados. nele, ja temos algumas conexoes pré-estabelecidas pelo PHaP. as migrations podem ser executadas por padrão em qualquer um desses banco de dados. o metodo 'env' verifica a existencia das variaveis de ambiente, e utiliza-as na composiçao das strings de conexao. 
+/config/database.php -> guarda as conexões com os banco de dados. nele, ja temos algumas conexoes pré-estabelecidas pelo PHP. as migrations podem ser executadas por padrão em qualquer um desses banco de dados. o metodo 'env' verifica a existencia das variaveis de ambiente, e utiliza-as na composiçao das strings de conexao. as variaveis de ambiente sao definidos no arquivo .env, na raiz do projeto, em /.env
+
+Comando php artisan migrate vai executar todas as migraçoes contidas dentro do nosso projeto; Temos 2 criadas automaticamente e uma criada na mao. 
+
+/////////////////
+
+Criando a base de dados da aplicaçao e configurando a conexão (.env)
+
+1o passo é abrir o arquivo de configuraçao das conexões, isto é, /config/database.php 
+
+Dentro desse arquivo, vemos que temos variaveis de ambiente que inclusive estão configuradas lá dentro do arquivo .env; o método env faz leitura da variavel de acordo com a definiçao contida dentro do arquivo de variavel de ambiente .env
+
+a parte do database_url pode ficar em branco pq estamos passando um host e nao URL.
+
+no .env, coloquemos como nome do BD:
+DB_DATABASE = sg
+
+//////////////
+
+Migration - executando as migraçoes
+ 
+
+/////////////
+
+Migration - criando e executando a migration fornecedores:
+Lembrando, flag '-m' para criar o model e a migration:
+php artisan make:model Fornecedor -m
+
+para criar a migration:
+php artisan make:migration create_fornecedores_table
+
+toda atividade q faremos nos banco de dados serão através das migraçoes, criaremos migraçoes para cada tarefa para que essas migraçoes sejam executadas no banco. 
+
+Em: "Schema::create('fornecedores', function (Blueprint $table) {", eu passo o nome da tabela q é "fornecedores" e uma função de callback. na funçao de callback estamos definindos as colunas que vamos ter em 'fornecedores' no banco, dentro da migration, incluiremos mais uma coluna:
+
+No .env:
+DB_CONNECTION=pgsql
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_DATABASE=sg
+DB_USERNAME=postgres
+DB_PASSWORD=
+
+agora executo 'php artisan migrate' para executar as migraçoes
+
+verá q terá a coluna created_at e updated_at devido ao timestamps();
+
+//////////////////
+
+Adicionando campos a uma tabela -
+Como adicionar campos a uma tabela ja criada a partir de uma migration?
+Lembre-se que migrations são na prática instruçoes executadas no banco de dados para um proposito. Faremos uma nova migraçao apenas para inclusão dessas novas colunas. 
+
+php artisan make:migration alter_fornecedores_novas_colunas
+
+verá q teremos os metodos up e down; o método 'up' é o método que será executado quando rodarmos o comando 'php artisan migrate'.
+
+copiemos o codigo do objeto Schema e vamos colar no método 'up' em 'alter_fornecedores_novas_colunas' e mudemos de 'create' para 'table', que seleciona uma tabela ja criada no banco para aplicaçao das instruçoes que forem encaminhadas na funçao de callback, basta definir agora dentro do método as novas colunas. 
+
+no alter_fornecedores_novas_colunas:
+
+public function up(): void
+{
+    Schema::table('fornecedores', function (Blueprint $table) {
+        $table->string('uf', 2);
+        $table->string('email', 150);
+    });
+}
+
+//////////////
+
+Migrations - métodos up e down:
+Tudo contigo dentro do método up() é executado dentro do comando php artisan migrate; o método 'up' é responsável por executar uma migração, alguma alteração dentro do banco de dados; o método down() é responsável por reverter o que foi criado com o método 'up', isto é, reverter as migrações. 
+
+Perceba que, no método 'down', na migration 'create_fornecedores_table', tem o código: 'Schema::dropIfExists('fornecedores');', que remove se existir
+
+e como executamos um rollback, com o método down?
+passamos a instruçao rollback:
+php artisan migrate:rollback
+
+// Vale lembrar que, com o método up, ele vai executando do mais antigo para o mais atual; com o método down, ele vai do mais atual pro mais antigo. 
+
+com o 'rollback', posso dizer quantos passos, isto é, quantas migrates queremos retroceder. 
+
+se fosse: 'php artisan migrate:rollback', ele iria executar o método 'down' da última migrate executada, isto é, um passo apenas. 
+
+para retroceder mais passos, executamos:
+php artisan migrate:rollback --step=2
+
+//////////////
+
+Modificadores Nullable e Default -
+Nullable permite que receba valores vazios; 'default' permite a inclusao de um valor default caso nao seja passado nenhum valor no registro. 
+
+crio uma nova migraçao:
+php artisan make:migration create_produtos_table
+
+vai criar migraçao 'produtos', no metodo up, coloco:
+
+Schema::create('produtos', function (Blueprint $table) {
+    $table->id();
+    $table->string('nome', 100);
+    $table->text('descricao')->nullable();
+    $table->integer('peso')->nullable();
+    $table->float('preco_venda', 8, 2)->default(0.01);
+    $table->integer('estoque_minimo')->default(1);
+    $table->integer('estoque_maximo')->default(1);
+    $table->timestamps();
+});
+
+e coloco os metodos nullable pra onde aceitar campo vazio e os valores default caso precise nos campos.
+
+executo com: php artisan migrate
+
+//////////////////////////
+
+Adicionando chaves estrangeiras (relacionamento um para um ) :
+
+teremos o relacionamento de produto com id do produto.
+
+executemos:
+php artisan make:migration create_produto_detalhes_table
+
+e no arquivo, no metodo 'up':
+public function up(): void
+{
+    Schema::create('produto_detalhes', function (Blueprint $table) {
+        // colunas
+        $table->id();
+        $table->unsignedBigInteger('produto_id');
+        $table->float('comprimento', 8, 2);
+        $table->float('largura', 8, 2);
+        $table->float('altura', 8, 2);
+        $table->timestamps();
+
+        // constraint
+        $table->foreign('produto_id')->references('id')->on('produtos');
+        $table->unique('produto_id'); // definimos como unique a chave estrangeira pra forçar o relacionamento 1 para um, cada produto so terá um id
+
+    });
+}
